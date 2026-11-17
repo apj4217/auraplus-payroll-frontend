@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@layer base { * { box-sizing: border-box; } body { margin:0; min-width:320px; min-height:100vh; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#faf7f8; color:#1c1216; } button,input,select,textarea{font:inherit;} }
+@layer components {
+  .card { @apply rounded-2xl border border-brand-purple/10 bg-white shadow-soft transition hover:shadow-lift; }
+  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-purple via-brand-rose to-brand-orange bg-[length:160%_100%] bg-left px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-brand-purple/20 transition hover:bg-right disabled:cursor-not-allowed disabled:opacity-60; }
+  .btn-secondary { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-brand-purple/15 bg-white px-4 py-2.5 text-sm font-semibold text-brand-dark transition hover:border-brand-orange/40 hover:bg-orange-50/60 hover:text-brand-rose; }
+  .btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50; }
+  .icon-btn { @apply inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-600 transition hover:bg-orange-50 hover:text-brand-rose; }
+  .input { @apply w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-brand-orange focus:ring-4 focus:ring-orange-100; }
+  .input-error { @apply border-red-300 focus:border-red-400 focus:ring-red-100; }
+  .label { @apply mb-1.5 block text-sm font-semibold text-slate-700; }
+  .field-error { @apply mt-1 text-xs font-medium text-red-600; }
+  .table-wrap { @apply overflow-x-auto rounded-2xl border border-brand-purple/10 shadow-soft; }
+  .table { @apply min-w-full divide-y divide-slate-200 text-left text-sm; }
+  .table th { @apply whitespace-nowrap bg-slate-50/80 px-4 py-3 font-semibold text-slate-600; }
+  .table td { @apply whitespace-nowrap px-4 py-3 text-slate-700; }
+  .table tbody tr { @apply transition hover:bg-orange-50/40; }
+  .brand-gradient-text { @apply bg-gradient-to-r from-brand-purple via-brand-rose to-brand-orange bg-clip-text text-transparent; }
+}
+
+html.dark { color-scheme: dark; }
+html.dark body, html.dark .app-shell { background: #000; color: #f5f5f5; }
+html.dark .bg-white, html.dark .card, html.dark .table-wrap { background-color: #111 !important; border-color: #353535 !important; }
+html.dark .card { box-shadow: 0 16px 45px rgba(0, 0, 0, .5); }
+html.dark .card:hover { box-shadow: 0 18px 54px rgba(127, 22, 87, .24); }
+html.dark .input { background-color: #080808 !important; border-color: #414141 !important; color: #f5f5f5; }
+html.dark .btn-secondary { background-color: #181818 !important; border-color: #454545 !important; color: #f5f5f5 !important; }
+html.dark .btn-secondary:hover { background-color: #252525 !important; border-color: #ea7317 !important; color: #fff !important; }
+html.dark .bg-slate-50, html.dark .bg-slate-50\/80 { background-color: #1a1a1a !important; }
+html.dark .bg-orange-50, html.dark .bg-orange-50\/60, html.dark .bg-orange-50\/40 { background-color: #261814 !important; }
+html.dark .bg-emerald-50 { background-color: #10261f !important; }
+html.dark .border-slate-100, html.dark .border-slate-200, html.dark .divide-slate-200 { border-color: #353535 !important; }
+html.dark .text-slate-900, html.dark .text-slate-950, html.dark .text-slate-700, html.dark .text-slate-600 { color: #f9f4f8 !important; }
+html.dark .text-slate-500, html.dark .text-slate-400 { color: #cbbbc6 !important; }
+html.dark .table th { background-color: #1a1a1a !important; color: #f1e8ee !important; }
+html.dark .table td { color: #ededed !important; }
+html.dark .table tbody tr:hover { background-color: #202020 !important; }
+html.dark .input::placeholder { color: #929292; }
+html.dark .bg-white\/90 { background-color: rgba(17, 17, 17, .92) !important; }
+html.dark .shadow-soft { box-shadow: 0 16px 45px rgba(0, 0, 0, .5) !important; }
