@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
-import { Pencil, Plus, Search, Trash2, UserRound } from "lucide-react";
+import { Mail, Pencil, Plus, Search, Trash2, UserRound } from "lucide-react";
 import ConfirmDialog from "../components/ConfirmDialog";
 import FormAlert from "../components/FormAlert";
 import Modal from "../components/Modal";
@@ -66,7 +66,7 @@ export default function EmployeesPage() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [temporaryCredentials, setTemporaryCredentials] = useState<{ employeeId: string; email: string; password: string } | null>(null);
+  const [temporaryCredentials, setTemporaryCredentials] = useState<{ employeeId: string; email: string; password: string; onboardingEmailSent?: boolean } | null>(null);
 
   async function load() {
     const [e, d] = await Promise.all([api<{ employees: Employee[] }>("/employees"), api<{ departments: Department[] }>("/departments")]);
@@ -146,7 +146,7 @@ export default function EmployeesPage() {
     }
     setSaving(true);
     try {
-      const result = await api<{ employee: Employee; account?: { email: string; temporaryPassword?: string } }>(
+      const result = await api<{ employee: Employee; account?: { email: string; temporaryPassword?: string; onboardingEmailSent?: boolean }; onboardingEmail?: { sent: boolean; message: string } }>(
         editing ? `/employees/${editing.id}` : "/employees",
         { method: editing ? "PATCH" : "POST", body: JSON.stringify(form) }
       );
@@ -156,9 +156,12 @@ export default function EmployeesPage() {
           employeeId: result.employee.id,
           email: result.account.email,
           password: result.account.temporaryPassword,
+          onboardingEmailSent: result.onboardingEmail?.sent ?? result.account.onboardingEmailSent,
         });
       }
-      showSuccess(editing ? `${form.firstName} ${form.lastName}'s details were updated successfully.` : `${form.firstName} ${form.lastName} was added as a new employee.`);
+      if (editing) showSuccess(`${form.firstName} ${form.lastName}'s details were updated successfully.`);
+      else if (result.onboardingEmail?.sent) showSuccess(`${form.firstName} ${form.lastName} was added and onboarding letters and login details were emailed.`);
+      else showError(`Employee created, but onboarding email was not sent. ${result.onboardingEmail?.message || "Check Render email settings and retry."}`);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to save employee. Please try again.");
@@ -169,10 +172,20 @@ export default function EmployeesPage() {
 
   async function loadTemporaryCredentials(employee: Employee) {
     try {
-      const result = await api<{ account: { email: string; temporaryPassword: string } }>(`/employees/${employee.id}/portal-credentials`);
-      setTemporaryCredentials({ employeeId: employee.id, email: result.account.email, password: result.account.temporaryPassword });
+      const result = await api<{ account: { email: string; temporaryPassword: string; onboardingEmailSent?: boolean } }>(`/employees/${employee.id}/portal-credentials`);
+      setTemporaryCredentials({ employeeId: employee.id, email: result.account.email, password: result.account.temporaryPassword, onboardingEmailSent: result.account.onboardingEmailSent });
     } catch (err) {
       showError(err instanceof Error ? err.message : "Temporary password is no longer available.");
+    }
+  }
+
+  async function resendOnboardingEmail(employeeId: string) {
+    try {
+      const result = await api<{ message: string }>(`/employees/${employeeId}/onboarding-email`, { method: "POST" });
+      setTemporaryCredentials((current) => current?.employeeId === employeeId ? { ...current, onboardingEmailSent: true } : current);
+      showSuccess(result.message);
+    } catch (err) {
+      showError(err instanceof Error ? err.message : "Unable to send employee onboarding email.");
     }
   }
 
@@ -207,7 +220,7 @@ export default function EmployeesPage() {
           <td className="capitalize">{item.employmentType.replace("-", " ")}</td>
           <td className="font-semibold">{currency(gross)}</td>
           <td><Badge text={item.status} /></td>
-          <td><div className="flex gap-1"><button className="icon-btn" title="Edit employee" onClick={() => show(item)}><Pencil size={16} /></button>{user?.role === "admin" && <button className="icon-btn" title="View temporary password" onClick={() => loadTemporaryCredentials(item)}>Key</button>}<button className="icon-btn text-red-600" title="Delete employee" onClick={() => setDeleteTarget(item)}><Trash2 size={16} /></button></div></td>
+          <td><div className="flex gap-1"><button className="icon-btn" title="Edit employee" onClick={() => show(item)}><Pencil size={16} /></button>{user?.role === "admin" && <><button className="icon-btn" title="View temporary password" onClick={() => loadTemporaryCredentials(item)}>Key</button><button className="icon-btn text-blue-700" title="Resend onboarding email and letters" onClick={() => resendOnboardingEmail(item.id)}><Mail size={16} /></button></>}<button className="icon-btn text-red-600" title="Delete employee" onClick={() => setDeleteTarget(item)}><Trash2 size={16} /></button></div></td>
         </tr>); })}</tbody></table>
       {!filtered.length && <div className="p-12 text-center text-sm text-slate-400">No employee records found.</div>}
     </div>
@@ -327,6 +340,10 @@ export default function EmployeesPage() {
               <button type="button" className="btn-primary whitespace-nowrap" onClick={() => navigator.clipboard.writeText(temporaryCredentials.password).then(() => showSuccess("Temporary password copied."))}>Copy</button>
             </div>
           </div>
+          <p className={`text-sm ${temporaryCredentials.onboardingEmailSent ? "text-emerald-700" : "text-amber-700"}`}>
+            {temporaryCredentials.onboardingEmailSent ? "Offer letter, joining letter and login details were emailed to this employee." : "The onboarding email was not sent. Check the Render email settings, then retry."}
+          </p>
+          {!temporaryCredentials.onboardingEmailSent && <button type="button" className="btn-secondary w-full justify-center" onClick={() => resendOnboardingEmail(temporaryCredentials.employeeId)}><Mail size={17} />Retry onboarding email</button>}
           <p className="text-xs text-slate-500">After the employee signs in successfully for the first time, the temporary password is permanently removed.</p>
         </div>
       )}

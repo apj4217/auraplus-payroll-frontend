@@ -7,7 +7,7 @@ import NumberField from "../components/NumberField";
 import PageHeader from "../components/PageHeader";
 import SearchableSelect from "../components/SearchableSelect";
 import { useToast } from "../context/ToastContext";
-import { api, currency, downloadFile, fetchFile, monthName } from "../services/api";
+import { api, currency, downloadBlob, downloadFile, fetchFile, monthName } from "../services/api";
 import type { Employee, Payroll } from "../types";
 
 type GenerateAllResult = {
@@ -221,16 +221,21 @@ export default function PayrollPage() {
       const file = new File([blob], name, { type: "application/pdf" });
       const shareData = { title: `Payslip - ${p.employeeName}`, text: `Payslip for ${monthName(p.month)} ${p.year}`, files: [file] };
       if (navigator.share && (!navigator.canShare || navigator.canShare(shareData))) await navigator.share(shareData);
-      else { await payslip(p); showSuccess("Payslip downloaded. You can now attach it to your preferred sharing app."); }
+      else { downloadBlob(blob, name); showSuccess("Payslip downloaded. You can now attach it to your preferred sharing app."); }
     } catch (err) {
       if (err instanceof Error && err.name !== "AbortError") showError(err.message || "Unable to share payslip.");
     }
   }
 
   async function shareByWhatsApp(p: Payroll) {
-    await payslip(p);
-    const text = `Hello ${p.employeeName}, your payslip for ${monthName(p.month)} ${p.year} is ready. Please find the downloaded PDF attached.`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    try {
+      const { blob, name } = await fetchFile(`/payroll/${p.id}/payslip`, `Payslip-${p.employeeCode}-${p.year}-${p.month}.pdf`);
+      downloadBlob(blob, name);
+      const text = `Hello ${p.employeeName}, your payslip for ${monthName(p.month)} ${p.year} is ready. Please find the downloaded PDF attached.`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      showError(err instanceof Error ? err.message : "Unable to share payslip on WhatsApp.");
+    }
   }
 
   async function shareByEmail(p: Payroll) {
